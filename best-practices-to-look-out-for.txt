@@ -1,0 +1,4 @@
+Migration-based schema changes: Track database evolution with numbered migrations
+Repository pattern: Encapsulate SQL in dedicated repository classes
+Connection management: Centralized database connection handling
+Environment-specific configuration: Different database settings for different environments

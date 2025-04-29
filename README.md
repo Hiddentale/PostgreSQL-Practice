@@ -1,1 +1,1 @@
-# PostgreSQL-Practice
+# To do: Write project overview and quickstart here
