@@ -1,0 +1,1 @@
+# Sakila schema creation script
