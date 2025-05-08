@@ -6,7 +6,6 @@ setup(
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     install_requires=[
-        "SQLAlchemy>=1.4.0",
         "psycopg2-binary>=2.9.0",
     ],
     python_requires=">=3.6",
