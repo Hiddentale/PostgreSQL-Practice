@@ -1,17 +1,12 @@
-#import psycopg2
+import psycopg2
 import logging
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from config import DataBaseSettings
 
 load_dotenv() 
 logger = logging.getLogger(__name__)
-
-try:
-    from config import DataBaseSettings
-    print("Successfully imported DataBaseSettings")
-except ImportError as e:
-    print(f"Import error: {e}")
 
 database_config = DataBaseSettings.get_config()
 
