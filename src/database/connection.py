@@ -1,24 +1,47 @@
-import psycopg2
-import logging
 import os
+import logging
+
+from psycopg2 import pool
 from dotenv import load_dotenv
-from pydantic import BaseModel
+
 from config import DataBaseSettings
 
 load_dotenv() 
 logger = logging.getLogger(__name__)
+logging.basicConfig(filename='example.log', encoding='utf-8', 
+                    level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
-database_config = DataBaseSettings.get_config()
 
-connection_parameters = {
-    "host": database_config.host,
-    "database": database_config.database,
-    "user": database_config.user,
-    "password": database_config.password.get_secret_value()
-}
+class ConnectionPool: # Needs better name
+    def __init__(self):
+        self.connection_pool = None
 
-connection_pool = psycopg2.pool.SimpleConnectionPool(1, 10, **connection_parameters)
+    def __enter__(self):
+        database_config = DataBaseSettings.get_config()
+        connection_parameters = {
+        "host": database_config.host,
+        "database": database_config.database,
+        "user": database_config.user,
+        "password": database_config.password.get_secret_value(),
+        }
+        try:
+            self.connection_pool = pool.SimpleConnectionPool(1, 10, **connection_parameters)
+            return self.connection_pool
+        except Exception:
+            logging.warning("Failed to create a connection pool.")
+            raise
 
-connection = connection_pool.getconn()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.connection_pool is not None:
+            self.connection_pool.close()
 
-connection.close()
+
+class Connection: # Needs better name
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
