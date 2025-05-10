@@ -37,11 +37,16 @@ class ConnectionPool: # Needs better name
 
 
 class Connection: # Needs better name
-    def __init__(self):
-        pass
+    def __init__(self, connection_pool):
+        self.connection = None
+        self.connection_pool = connection_pool
 
     def __enter__(self):
-        pass
+        try:
+            self.connection = self.connection_pool.getconn()
+        except Exception:
+            logging.warning("Failed to acquire connection from connection pool.")
+            raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self.connection.close()
