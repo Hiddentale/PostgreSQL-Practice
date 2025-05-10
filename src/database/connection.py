@@ -25,7 +25,8 @@ class ConnectionPool: # Needs better name
         "password": database_config.password.get_secret_value(),
         }
         try:
-            self.connection_pool = pool.SimpleConnectionPool(1, 10, **connection_parameters)
+            self.connection_pool = pool.SimpleConnectionPool(database_config.min_connections, 
+                                                             database_config.max_connections, **connection_parameters)
             return self.connection_pool
         except Exception:
             logging.warning("Failed to create a connection pool.")
@@ -44,9 +45,10 @@ class Connection: # Needs better name
     def __enter__(self):
         try:
             self.connection = self.connection_pool.getconn()
+            return self.connection
         except Exception:
             logging.warning("Failed to acquire connection from connection pool.")
             raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.connection.close()
+        self.connection_pool.putconn(self.connection)
