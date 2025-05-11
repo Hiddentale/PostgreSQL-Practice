@@ -12,7 +12,18 @@ logging.basicConfig(filename='example.log', encoding='utf-8',
                     level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
-class ConnectionPool: # Needs better name
+class Singleton(type):
+    def __init__(self, *args, **kwargs):
+        self.instance = None
+        super().__init__(*args, **kwargs)
+    
+    def __call__(self, *args, **kwargs):
+        if self.__instance is None:
+            self.__instance = super().__call__(*args, **kwargs)
+        else:
+            return self.__instance
+
+class ConnectionPool(metaclass=Singleton): # Needs better name
     def __init__(self):
         self.connection_pool = None
 
