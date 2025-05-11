@@ -1,4 +1,3 @@
-import os
 import logging
 
 from psycopg2 import pool, OperationalError
@@ -24,8 +23,7 @@ class Singleton(type):
     def __call__(self, *args, **kwargs):
         if self.__instance is None:
             self.__instance = super().__call__(*args, **kwargs)
-        else:
-            return self.__instance
+        return self.__instance
 
 
 class PostgreSQLConnectionPool(metaclass=Singleton):
@@ -62,7 +60,6 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         if self.connection_pool is not None:
             self.connection_pool.close()
     
-
     @retry(on=OperationalError)
     def get_valid_connection(self):
         """
@@ -85,8 +82,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         except Exception:
             raise OperationalError("Unable to obtain a valid database connection")
         
-
-    def is_connection_alive(connection):
+    def is_connection_alive(self, connection):
         """
         Verify if a database connection is still active and usable.
         """
