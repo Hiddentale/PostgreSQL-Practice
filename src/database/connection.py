@@ -60,7 +60,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         if self.connection_pool is not None:
             self.connection_pool.close()
     
-    @retry(on=OperationalError)
+    @retry(on=OperationalError, attempts=5, timeout=30.0, wait_initial=0.1, wait_max=5.0)
     def get_valid_connection(self):
         """
         Get a connection from the pool and ensure it's valid, using
@@ -73,14 +73,33 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
             A valid database connection
         """
         connection = None
-        try:
-            connection = self.connection_pool.getconn()
-            if self.is_connection_alive(connection):
-                return connection
-            else:
-                self.connection_pool.putconn(connection, close=True)
-        except Exception:
-            raise OperationalError("Unable to obtain a valid database connection")
+        if self.connection_pool is not None:
+            try:
+                connection = self.connection_pool.getconn()
+                if self.is_connection_alive(connection):
+                    return connection
+                else:
+                    self.connection_pool.putconn(connection, close=True)
+            except OperationalError as error:
+                if error.pgcode is not None:
+                    postgres_error_class = error.pgcode[:2]
+                    if postgres_error_class == "08":
+                        logging.warning("Connection Exception")
+                        raise Exception("Connection Exception")
+                    elif postgres_error_class == "53":
+                        logging.warning("Insufficient Resources")
+                        raise Exception("Insufficient Resources")
+                    elif postgres_error_class == "55":
+                        logging.warning("Object Not In Prerequisite State")
+                        raise Exception("Object Not In Prerequisite State")
+                    elif postgres_error_class == "57":
+                        logging.warning("Operator Intervention")
+                        raise Exception("Operator Intervention")
+                    elif postgres_error_class == "58":
+                        logging.warning("System Error")
+                        raise Exception("System Error")
+        else:
+            raise Exception("Connection pool is missing.")
         
     def is_connection_alive(self, connection):
         """
