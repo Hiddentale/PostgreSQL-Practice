@@ -115,7 +115,7 @@ class PooledDatabaseConnection:
 
     def __enter__(self):
         try:
-            self.connection = self.connection_pool.getconn()
+            self.connection = self.connection_pool.get_valid_connection()
             return self.connection
         except Exception:
             logging.warning("Failed to acquire connection from connection pool.")
