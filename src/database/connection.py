@@ -13,8 +13,11 @@ logging.basicConfig(filename='example.log', encoding='utf-8',
 
 
 class Singleton(type):
+    """
+    A metaclass that ensures only one instance of a class exists.
+    """
     def __init__(self, *args, **kwargs):
-        self.instance = None
+        self.__instance = None
         super().__init__(*args, **kwargs)
     
     def __call__(self, *args, **kwargs):
@@ -24,7 +27,17 @@ class Singleton(type):
             return self.__instance
 
 
-class ConnectionPool(metaclass=Singleton): # Needs better name
+class PostgreSQLConnectionPool(metaclass=Singleton):
+    """
+    Manages a pool of PostgreSQL database connections as a singleton.
+    
+    This class provides efficient reuse of database connections through connection pooling.
+    It implements the context manager protocol for clean resource management.
+    
+    Example:
+        with PostgreSQLConnectionPool() as pool:
+            # Use the connection pool
+    """
     def __init__(self):
         self.connection_pool = None
 
@@ -47,9 +60,55 @@ class ConnectionPool(metaclass=Singleton): # Needs better name
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection_pool is not None:
             self.connection_pool.close()
+    
+    def get_valid_connection(self):
+        """
+        Get a connection from the pool and ensure it's valid.
+    
+        If the connection fails validation, it's discarded and a new one 
+        is created to replace it.
+    
+        Returns:
+            A valid database connection
+        """
+        number_of_tries = 0
+        max_tries = 5
+        connection = None
+        while number_of_tries < max_tries:
+            try:
+                connection = self.connection_pool.getconn()
+                if self.is_connection_alive(connection):
+                    return connection
+                else:
+                    self.connection_pool.putconn(connection, close=True)
+                    number_of_tries += 1
+            except Exception:
+                pass # Add exception handling here
+        raise OperationalError("Unable to obtain a valid database connection")
+
+    def is_connection_alive(connection):
+        """
+        Verify if a database connection is still active and usable.
+        """
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                result = cursor.fetchone()
+                return result[0] == 1
+        except Exception:
+            return False
 
 
-class Connection: # Needs better name
+class PooledDatabaseConnection:
+    """
+    Manages a single connection obtained from a connection pool.
+    
+    Example:
+        with PostgreSQLConnectionPool() as pool:
+            with PooledDatabaseConnection(pool) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM users")
+    """
     def __init__(self, connection_pool):
         self.connection = None
         self.connection_pool = connection_pool
@@ -63,4 +122,5 @@ class Connection: # Needs better name
             raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.connection_pool.putconn(self.connection)
+        if self.connection is not None:
+            self.connection_pool.putconn(self.connection)
