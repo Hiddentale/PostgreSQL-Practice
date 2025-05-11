@@ -3,6 +3,7 @@ import logging
 
 from psycopg2 import pool, OperationalError
 from dotenv import load_dotenv
+from stamina import retry
 
 from config import DataBaseSettings
 
@@ -61,9 +62,12 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         if self.connection_pool is not None:
             self.connection_pool.close()
     
+
+    @retry(on=OperationalError)
     def get_valid_connection(self):
         """
-        Get a connection from the pool and ensure it's valid.
+        Get a connection from the pool and ensure it's valid, using
+        stamina to make sure retrying does not clog up network traffic.
     
         If the connection fails validation, it's discarded and a new one 
         is created to replace it.
@@ -71,20 +75,16 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         Returns:
             A valid database connection
         """
-        number_of_tries = 0
-        max_tries = 5
         connection = None
-        while number_of_tries < max_tries:
-            try:
-                connection = self.connection_pool.getconn()
-                if self.is_connection_alive(connection):
-                    return connection
-                else:
-                    self.connection_pool.putconn(connection, close=True)
-                    number_of_tries += 1
-            except Exception:
-                pass # Add exception handling here
-        raise OperationalError("Unable to obtain a valid database connection")
+        try:
+            connection = self.connection_pool.getconn()
+            if self.is_connection_alive(connection):
+                return connection
+            else:
+                self.connection_pool.putconn(connection, close=True)
+        except Exception:
+            raise OperationalError("Unable to obtain a valid database connection")
+        
 
     def is_connection_alive(connection):
         """
