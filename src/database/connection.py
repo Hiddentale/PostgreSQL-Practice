@@ -1,7 +1,7 @@
 import os
 import logging
 
-from psycopg2 import pool
+from psycopg2 import pool, OperationalError
 from dotenv import load_dotenv
 
 from config import DataBaseSettings
@@ -23,6 +23,7 @@ class Singleton(type):
         else:
             return self.__instance
 
+
 class ConnectionPool(metaclass=Singleton): # Needs better name
     def __init__(self):
         self.connection_pool = None
@@ -39,8 +40,8 @@ class ConnectionPool(metaclass=Singleton): # Needs better name
             self.connection_pool = pool.SimpleConnectionPool(database_config.min_connections, 
                                                              database_config.max_connections, **connection_parameters)
             return self.connection_pool
-        except Exception:
-            logging.warning("Failed to create a connection pool.")
+        except OperationalError as error:
+            logging.warning(f"Failed to create a connection pool: {error}")
             raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
