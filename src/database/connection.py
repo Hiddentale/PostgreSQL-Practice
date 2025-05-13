@@ -84,19 +84,19 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                 if error.pgcode is not None:
                     postgres_error_class = error.pgcode[:2]
                     if postgres_error_class == "08":
-                        logging.warning("Connection Exception")
+                        logging.warning(f"Connection Exception, {error.pgerror}")
                         raise Exception("Connection Exception")
                     elif postgres_error_class == "53":
-                        logging.warning("Insufficient Resources")
+                        logging.warning(f"Insufficient Resources, {error.pgerror}")
                         raise Exception("Insufficient Resources")
                     elif postgres_error_class == "55":
-                        logging.warning("Object Not In Prerequisite State")
+                        logging.warning(f"Object Not In Prerequisite State, {error.pgerror}")
                         raise Exception("Object Not In Prerequisite State")
                     elif postgres_error_class == "57":
-                        logging.warning("Operator Intervention")
+                        logging.warning(f"Operator Intervention, {error.pgerror}")
                         raise Exception("Operator Intervention")
                     elif postgres_error_class == "58":
-                        logging.warning("System Error")
+                        logging.warning(f"System Error, {error.pgerror}")
                         raise Exception("System Error")
         else:
             raise Exception("Connection pool is missing.")
