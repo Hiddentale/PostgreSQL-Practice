@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from stamina import retry
 
 from config import DataBaseSettings
+from .exceptions import ConnectionError, ConfigurationError, QueryError, DatabaseError
 
 load_dotenv() 
 logger = logging.getLogger(__name__)
@@ -53,7 +54,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                                                              database_config.max_connections, **connection_parameters)
             return self.connection_pool
         except OperationalError as error:
-            logging.warning(f"Failed to create a connection pool: {error}")
+            logger.warning(f"Failed to create a connection pool: {error}")
             raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -80,24 +81,14 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                     return connection
                 else:
                     self.connection_pool.putconn(connection, close=True)
-            except OperationalError as error:
-                if error.pgcode is not None:
-                    postgres_error_class = error.pgcode[:2]
-                    if postgres_error_class == "08":
-                        logging.warning(f"Connection Exception, {error.pgerror}")
-                        raise Exception("Connection Exception")
-                    elif postgres_error_class == "53":
-                        logging.warning(f"Insufficient Resources, {error.pgerror}")
-                        raise Exception("Insufficient Resources")
-                    elif postgres_error_class == "55":
-                        logging.warning(f"Object Not In Prerequisite State, {error.pgerror}")
-                        raise Exception("Object Not In Prerequisite State")
-                    elif postgres_error_class == "57":
-                        logging.warning(f"Operator Intervention, {error.pgerror}")
-                        raise Exception("Operator Intervention")
-                    elif postgres_error_class == "58":
-                        logging.warning(f"System Error, {error.pgerror}")
-                        raise Exception("System Error")
+            except ConnectionError:
+                pass
+            except ConfigurationError:
+                pass
+            except QueryError:
+                pass
+            except DatabaseError:
+                pass
         else:
             raise Exception("Connection pool is missing.")
         
@@ -110,7 +101,8 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                 cursor.execute("SELECT 1")
                 result = cursor.fetchone()
                 return result[0] == 1
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Connection validation failed: {e}")
             return False
 
 
@@ -133,7 +125,7 @@ class PooledDatabaseConnection:
             self.connection = self.connection_pool.get_valid_connection()
             return self.connection
         except Exception:
-            logging.warning("Failed to acquire connection from connection pool.")
+            logger.warning("Failed to acquire connection from connection pool.")
             raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
