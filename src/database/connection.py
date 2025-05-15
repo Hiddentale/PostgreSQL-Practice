@@ -87,10 +87,8 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                 pass
             except QueryError:
                 pass
-            except DatabaseError:
-                pass
         else:
-            raise Exception("Connection pool is missing.")
+            raise ConfigurationError("Connection pool is missing.")
         
     def is_connection_alive(self, connection):
         """
