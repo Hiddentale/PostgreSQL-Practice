@@ -101,6 +101,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                 return result[0] == 1
         except Exception as e:
             logger.warning(f"Connection validation failed: {e}")
+            #raise DatabaseError("Connection couldn't be established", program_state)
             return False
 
 

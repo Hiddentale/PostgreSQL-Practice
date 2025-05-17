@@ -24,8 +24,15 @@ class DatabaseError(Exception):
         self.details = details
         self.timestamp = datetime.now()
 
+        details_string = ""
+        if details is not None:
+            details_items = [f"{key}={value}" for key, value in details]
+
+        super().__init__(self, f"{self.message}: {details_string}")
+
 
 class ConnectionError(DatabaseError):
+    
     """Connection establishment or maintenance errors.
     
     Raised when the application cannot connect to the database server
