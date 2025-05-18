@@ -55,7 +55,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
             return self.connection_pool
         except psycopg2.Error as postgres_error:
             custom_error = DatabaseError.from_postgres_exception(postgres_error)
-            raise custom_error
+            raise custom_error from postgres_error
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection_pool is not None:
@@ -83,7 +83,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                     self.connection_pool.putconn(connection, close=True)
             except psycopg2.Error as postgres_error:
                 custom_error = DatabaseError.from_postgres_exception(postgres_error)
-                raise custom_error
+                raise custom_error from postgres_error
         else:
             raise ConfigurationError("Connection pool is missing.")
         
@@ -98,7 +98,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                 return result[0] == 1
         except psycopg2.Error as postgres_error:
             custom_error = DatabaseError.from_postgres_exception(postgres_error)
-            raise custom_error
+            raise custom_error from postgres_error
 
 
 class PooledDatabaseConnection:
@@ -127,7 +127,7 @@ class PooledDatabaseConnection:
             # Maybe add implementation here for retry after a while?
             raise
         except AdminInterventionError:
-            logger.warning("Admin has intervented.")
+            logger.warning("Admin has intervened.")
             raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):

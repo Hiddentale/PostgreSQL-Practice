@@ -48,7 +48,7 @@ class DatabaseError(Exception):
             "table_name": getattr(postgres_exception.diag, "table_name"),
             "column_name": getattr(postgres_exception.diag, "column_name"),
             "statement_position": getattr(postgres_exception.diag, "statement_position"),
-            "datetime": datetime.time(timezone='utc')
+            "datetime": datetime.time(timezone.utc)
         }
         details = {key: value for key, value in details.items() if value is not None}
         return exception_class(message, details)
@@ -142,14 +142,30 @@ class SystemError(DatabaseError):
     Examples: I/O errors, unexpected system call failures.
     """
 
+
+class IntegrityConstraintViolation(DatabaseError):
+    """Constraint violation errors like unique, foreign key, or check constraints."""
+
+
+class TransactionError(DatabaseError):
+    """Transaction rollback errors such as serialization failures or deadlocks."""
+
+
+class FeatureNotSupportedError(DatabaseError):
+    """Errors when attempting to use features not supported by the PostgreSQL server."""
+
+
 # PostgreSQL-specific error codes mapped to exception classes
 PG_ERROR_MAPPING = {
     '08': ConnectionError,
     '22': InputDataError,
+    '23': IntegrityConstraintViolation,
+    '40': TransactionError,
     '42': SQLSyntaxError,
     '53': OutOfResourcesError,
     '57': AdminInterventionError,
     '58': SystemError,
+    '0A': FeatureNotSupportedError,
 }
 
 # SQL error codes
