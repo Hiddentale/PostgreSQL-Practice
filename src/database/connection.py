@@ -129,6 +129,9 @@ class PooledDatabaseConnection:
         except AdminInterventionError:
             logger.warning("Admin has intervened.")
             raise
+        except ConfigurationError:
+            logger.warning("Connection pool is missing")
+            raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection is not None:

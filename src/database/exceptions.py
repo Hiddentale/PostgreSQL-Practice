@@ -32,6 +32,9 @@ class DatabaseError(Exception):
     @classmethod
     def from_postgres_exception(cls, postgres_exception, params=None, query=None):
         """Create the appropriate DatabaseError subclass from a PostgreSQL exception."""
+        if params is not None and not isinstance(params, dict):
+            raise ValueError("Database parameters must be provided as a dictionary for proper error handling")
+    
         sqlstate = getattr(postgres_exception.diag, "sqlstate", "")
         error_class = sqlstate[:2] if sqlstate else ""
 
@@ -55,7 +58,14 @@ class DatabaseError(Exception):
     
     @staticmethod
     def remove_password_and_tokens_from_params(params):
-        raise NotImplementedError
+        if params is None:
+            return None
+        
+        cleaned_params = params.copy()
+        for key in cleaned_params:
+            if any(sensitive in key.lower() for sensitive in ['password', 'token', 'secret', 'key']):
+                cleaned_params[key] = "[REDACTED]"
+        return cleaned_params
 
 
 class ConnectionError(DatabaseError):
