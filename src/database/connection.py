@@ -82,11 +82,11 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                 else:
                     self.connection_pool.putconn(connection, close=True)
             except ConnectionError:
-                pass
+                print("Exception implementation details missing")
             except ConfigurationError:
-                pass
+                print("Exception implementation details missing")
             except QueryError:
-                pass
+                print("Exception implementation details missing")
         else:
             raise ConfigurationError("Connection pool is missing.")
         

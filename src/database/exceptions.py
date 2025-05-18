@@ -6,7 +6,7 @@ providing more specific error types for different database failure scenarios.
 Each exception corresponds to a specific class of PostgreSQL error codes.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 
@@ -22,7 +22,6 @@ class DatabaseError(Exception):
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         self.message = message
         self.details = details
-        self.timestamp = datetime.now()
 
         super().__init__(self, f"{self.message}")
     
@@ -62,6 +61,29 @@ class QueryError(DatabaseError):
     
     Examples: transaction failures, constraint violations.
     """
+
+
+    @classmethod
+    def from_postgres_exception(cls, postgres_exception, query=None, params=None):
+        """Create a QueryError from a PostgreSQL exception."""
+        message = str(postgres_exception)
+        details = {
+            "query": query,
+            "params": cls.remove_password_and_tokens_from_params(params),
+            "sqlstate": getattr(postgres_exception.diag, "sqlstate"),
+            "message_detail": getattr(postgres_exception.diag, "message_detail"),
+            "constraint_name": getattr(postgres_exception.diag, "constraint_name"),
+            "schema_name": getattr(postgres_exception.diag, "schema_name"),
+            "table_name": getattr(postgres_exception.diag, "table_name"),
+            "column_name": getattr(postgres_exception.diag, "column_name"),
+            "statement_position": getattr(postgres_exception.diag, "statement_position"),
+        }
+        details = {key: value for key, value in details.items() if value is not None}
+        return cls(message, details)
+    
+    @staticmethod
+    def remove_password_and_tokens_from_params(params):
+        raise NotImplementedError
 
 
 class InputDataError(DatabaseError):
@@ -124,3 +146,47 @@ PG_ERROR_MAPPING = {
     '57': AdminInterventionError,
     '58': SystemError,
 }
+
+# SQL error codes
+# Class 00: Successful Completion
+# Class 01: Warning
+# Class 02: No Data
+# Class 03: SQL Statement Not Yet Complete
+# Class 08: Connection Exceptions
+# Class 09: Triggered Action Exceptions
+# Class 0A: Feature Not Supported
+# Class 0B: Invalid Transaction Initiation
+# Class 0F: Locator Exception
+# Class 0L: Invalid Grantor
+# Class 0P: Invalid Role Specification
+# Class 0Z: Diagnostics Exception
+# Class 20: Case Not Found
+# Class 21: Cardinality Violation
+# Class 22: Data Exception
+# Class 23: Integrity Constraint Violation
+# Class 24: Invalid Cursor State
+# Class 25: Invalid Transaction State
+# Class 26: Invalid SQL Statement Name
+# Class 27: Triggered Data Change Violation
+# Class 28: Invalid Authorization Specification
+# Class 2B: Dependent Privilege Descriptors Still Exist
+# Class 2D: Invalid Transaction Termination
+# Class 2F: SQL Routine Exception
+# Class 34: Invalid Cursor Name
+# Class 38: External Routine Exception
+# Class 39: External Routine Invocation Exception
+# Class 3B: Savepoint Exception
+# Class 3D: Invalid Catalog Name
+# Class 3F: Invalid Schema Name
+# Class 40: Transaction Rollback
+# Class 42: Syntax Error or Access Rule Violation
+# Class 44: WITH CHECK OPTION Violation
+# Class 53: Insufficient Resources
+# Class 54: Program Limit Exceeded
+# Class 55: Object Not In Prerequisite State
+# Class 57: Operator Intervention
+# Class 58: System Error
+# Class F0: Configuration File Error
+# Class HV: Foreign Data Wrapper Error
+# Class P0: PL/pgSQL Error
+# Class XX: Internal Error
