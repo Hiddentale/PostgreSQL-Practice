@@ -24,11 +24,11 @@ class DatabaseError(Exception):
         self.details = details
         self.timestamp = datetime.now()
 
-        details_string = ""
-        if details is not None:
-            details_items = [f"{key}={value}" for key, value in details]
-
-        super().__init__(self, f"{self.message}: {details_string}")
+        super().__init__(self, f"{self.message}")
+    
+    def __str__(self):
+        detail_items = [f"{key}={value}" for key, value in self.details.items() if value is not None]
+        return f"{self.message} [{', '.join(detail_items)}]"
 
 
 class ConnectionError(DatabaseError):
