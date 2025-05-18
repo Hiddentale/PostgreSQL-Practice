@@ -1,11 +1,11 @@
 import logging
 
-from psycopg2 import pool, OperationalError
+import psycopg2
 from dotenv import load_dotenv
 from stamina import retry
 
 from config import DataBaseSettings
-from .exceptions import ConnectionError, ConfigurationError, QueryError, DatabaseError
+from .exceptions import ConnectionError, ConfigurationError, OutOfResourcesError, DatabaseError, AdminInterventionError
 
 load_dotenv() 
 logger = logging.getLogger(__name__)
@@ -50,18 +50,18 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         "password": database_config.password.get_secret_value(),
         }
         try:
-            self.connection_pool = pool.SimpleConnectionPool(database_config.min_connections, 
+            self.connection_pool = psycopg2.pool.SimpleConnectionPool(database_config.min_connections, 
                                                              database_config.max_connections, **connection_parameters)
             return self.connection_pool
-        except OperationalError as error:
-            logger.warning(f"Failed to create a connection pool: {error}")
-            raise
+        except psycopg2.Error as postgres_error:
+            custom_error = DatabaseError.from_postgres_exception(postgres_error)
+            raise custom_error
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection_pool is not None:
             self.connection_pool.close()
     
-    @retry(on=OperationalError, attempts=5, timeout=30.0, wait_initial=0.1, wait_max=5.0)
+    @retry(on=psycopg2.OperationalError, attempts=5, timeout=30.0, wait_initial=0.1, wait_max=5.0)
     def get_valid_connection(self):
         """
         Get a connection from the pool and ensure it's valid, using
@@ -81,12 +81,9 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                     return connection
                 else:
                     self.connection_pool.putconn(connection, close=True)
-            except ConnectionError:
-                print("Exception implementation details missing")
-            except ConfigurationError:
-                print("Exception implementation details missing")
-            except QueryError:
-                print("Exception implementation details missing")
+            except psycopg2.Error as postgres_error:
+                custom_error = DatabaseError.from_postgres_exception(postgres_error)
+                raise custom_error
         else:
             raise ConfigurationError("Connection pool is missing.")
         
@@ -99,10 +96,9 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
                 cursor.execute("SELECT 1")
                 result = cursor.fetchone()
                 return result[0] == 1
-        except Exception as e:
-            logger.warning(f"Connection validation failed: {e}")
-            #raise DatabaseError("Connection couldn't be established", program_state)
-            return False
+        except psycopg2.Error as postgres_error:
+            custom_error = DatabaseError.from_postgres_exception(postgres_error)
+            raise custom_error
 
 
 class PooledDatabaseConnection:
@@ -123,8 +119,15 @@ class PooledDatabaseConnection:
         try:
             self.connection = self.connection_pool.get_valid_connection()
             return self.connection
-        except Exception:
+        except ConnectionError:
             logger.warning("Failed to acquire connection from connection pool.")
+            raise
+        except OutOfResourcesError:
+            logger.warning("Database is out of resources. Please try again later.")
+            # Maybe add implementation here for retry after a while?
+            raise
+        except AdminInterventionError:
+            logger.warning("Admin has intervented.")
             raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):

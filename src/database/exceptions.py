@@ -28,6 +28,34 @@ class DatabaseError(Exception):
     def __str__(self):
         detail_items = [f"{key}={value}" for key, value in self.details.items() if value is not None]
         return f"{self.message} [{', '.join(detail_items)}]"
+    
+    @classmethod
+    def from_postgres_exception(cls, postgres_exception, params=None, query=None):
+        """Create the appropriate DatabaseError subclass from a PostgreSQL exception."""
+        sqlstate = getattr(postgres_exception.diag, "sqlstate", "")
+        error_class = sqlstate[:2] if sqlstate else ""
+
+        exception_class = PG_ERROR_MAPPING.get(error_class, DatabaseError)
+
+        message = str(postgres_exception)
+        details = {
+            "query": query,
+            "params": cls.remove_password_and_tokens_from_params(params),
+            "sqlstate": sqlstate,
+            "message_detail": getattr(postgres_exception.diag, "message_detail"),
+            "constraint_name": getattr(postgres_exception.diag, "constraint_name"),
+            "schema_name": getattr(postgres_exception.diag, "schema_name"),
+            "table_name": getattr(postgres_exception.diag, "table_name"),
+            "column_name": getattr(postgres_exception.diag, "column_name"),
+            "statement_position": getattr(postgres_exception.diag, "statement_position"),
+            "datetime": datetime.time(timezone='utc')
+        }
+        details = {key: value for key, value in details.items() if value is not None}
+        return exception_class(message, details)
+    
+    @staticmethod
+    def remove_password_and_tokens_from_params(params):
+        raise NotImplementedError
 
 
 class ConnectionError(DatabaseError):
@@ -61,29 +89,6 @@ class QueryError(DatabaseError):
     
     Examples: transaction failures, constraint violations.
     """
-
-
-    @classmethod
-    def from_postgres_exception(cls, postgres_exception, query=None, params=None):
-        """Create a QueryError from a PostgreSQL exception."""
-        message = str(postgres_exception)
-        details = {
-            "query": query,
-            "params": cls.remove_password_and_tokens_from_params(params),
-            "sqlstate": getattr(postgres_exception.diag, "sqlstate"),
-            "message_detail": getattr(postgres_exception.diag, "message_detail"),
-            "constraint_name": getattr(postgres_exception.diag, "constraint_name"),
-            "schema_name": getattr(postgres_exception.diag, "schema_name"),
-            "table_name": getattr(postgres_exception.diag, "table_name"),
-            "column_name": getattr(postgres_exception.diag, "column_name"),
-            "statement_position": getattr(postgres_exception.diag, "statement_position"),
-        }
-        details = {key: value for key, value in details.items() if value is not None}
-        return cls(message, details)
-    
-    @staticmethod
-    def remove_password_and_tokens_from_params(params):
-        raise NotImplementedError
 
 
 class InputDataError(DatabaseError):
@@ -141,7 +146,7 @@ class SystemError(DatabaseError):
 PG_ERROR_MAPPING = {
     '08': ConnectionError,
     '22': InputDataError,
-    '42': SyntaxError,
+    '42': SQLSyntaxError,
     '53': OutOfResourcesError,
     '57': AdminInterventionError,
     '58': SystemError,
