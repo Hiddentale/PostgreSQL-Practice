@@ -31,12 +31,15 @@ class DatabaseError(Exception):
     
     @classmethod
     def from_postgres_exception(cls, postgres_exception, params=None, query=None):
-        """Create the appropriate DatabaseError subclass from a PostgreSQL exception."""
+        """Create the appropriate DatabaseError subclass from a PostgreSQL exception.
+
+        Where postgres_exception is postgresql's error object given by psycopg2.
+        """
         if params is not None and not isinstance(params, dict):
             raise ValueError("Database parameters must be provided as a dictionary for proper error handling")
     
         sqlstate = getattr(postgres_exception.diag, "sqlstate", "")
-        error_class = sqlstate[:2] if sqlstate else ""
+        error_class = sqlstate[:2] if sqlstate else "" # Grab the first 2 numbers of the postgreqsql object's error code
 
         exception_class = PG_ERROR_MAPPING.get(error_class, DatabaseError)
 
