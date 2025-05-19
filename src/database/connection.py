@@ -52,6 +52,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         try:
             self.connection_pool = psycopg2.pool.SimpleConnectionPool(database_config.min_connections, 
                                                              database_config.max_connections, **connection_parameters)
+            logger.info("Connection pool was succesfully created.")
             return self.connection_pool
         except psycopg2.Error as postgres_error:
             custom_error = DatabaseError.from_postgres_exception(postgres_error)
@@ -75,12 +76,15 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         """
         connection = None
         if self.connection_pool is not None:
+            logger.info("Acquiring connection from connection pool.")
             try:
                 connection = self.connection_pool.getconn()
                 if self.is_connection_alive(connection):
+                    logger.info("Connection acquired.")
                     return connection
                 else:
                     self.connection_pool.putconn(connection, close=True)
+                    logger.info("Chosen connection was no longer active, retrying.")
             except psycopg2.Error as postgres_error:
                 custom_error = DatabaseError.from_postgres_exception(postgres_error)
                 raise custom_error from postgres_error
