@@ -27,6 +27,7 @@ class Singleton(type):
         return self.__instance
 
 
+# Look at Python libraries like pybreaker or circuitbreaker.
 class PostgreSQLConnectionPool(metaclass=Singleton):
     """
     Manages a pool of PostgreSQL database connections as a singleton.
@@ -40,6 +41,11 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
     """
     def __init__(self):
         self.connection_pool = None
+        # Todo:
+        # self.checkout_times = {}  # Track when connections were checked out
+        # self.connection_ages = {}  # Track when connections were created
+        # self.wait_times = []      # Recent wait times for connection acquisition
+        # self.error_counts = {}    # Errors by connection
 
     def __enter__(self):
         database_config = DataBaseSettings.get_config()
