@@ -12,18 +12,24 @@ class QueryBuilder:
         self.columns: Optional[List] = None
 
     def __str__(self):
-        # Proper SQL Query format here
+        if not self.table:
+            raise ValueError("Table must be specified")
+        
+        sql_string = f"SELECT {self.columns} FROM {self.table}"
+        if self.columns:
+            pass
         pass
+        # Proper SQL Query format here
 
-    def select(self, columns):
+    def select(self, *columns):
         self.columns = columns
     
-    def from_table(self, table):
-        pass
+    def from_table(self, table: str): # "Explicitely disallow comma notation and table functions for security.
+        self.table = table
 
     def where():
         pass
 
 
-# possible template
+# possible use case
 query = QueryBuilder().select("name", "email").from_table("users").where("active = %s", [True])
