@@ -23,108 +23,109 @@ class QueryBuilder:
 
     # # ______________________________Core Query Operations________________________________
     def count(self):
-        pass
+        return self
 
     def delete(self):
-        pass
+        return self
 
     def distinct(self):
-        pass
+        return self
 
     def exists(self):
-        pass
+        return self
 
     def first(self):
-        pass
+        return self
 
     def insert(self):
-        pass
+        return self
 
     def select(self, *columns):
         self.columns = columns
+        return self
 
     def update(self):
-        pass
+        return self
 
     # ______________________________Joins________________________________
     def cross_join(self):
-        pass
+        return self
 
     def full_outer_join(self):
-        pass
+        return self
 
     def inner_join(self):
-        pass
+        return self
 
     def join(self):
-        pass
+        return self
 
     def left_join(self):
-        pass
+        return self
 
     def right_join(self):
-        pass
+        return self
 # ______________________________Query Structure________________________________
     def from_table(self, table: str): # "Explicitely disallow comma notation and table functions for security.
         self.table = table
     
     def group_by(self):
-        pass
+        return self
 
     def having(self):
-        pass   
+        return self   
 
     def limit(self):
-        pass
+        return self
 
     def offset(self):
-        pass
+        return self
 
     def order_by(self):
-        pass
+        return self
 
 # ______________________________Set operation________________________________
     def _except(self):
-        pass
+        return self
     
     def intersect(self):
-        pass        
+        return self        
 
     def union(self):
-        pass
+        return self
 
 # ______________________________Advanced Features________________________________
     def on_conflict(self):
-        pass
+        return self
 
     def returning(self):
-        pass
+        return self
 
     def with_cte(self):
-        pass
+        return self
 
 # ______________________________Utility/Execution________________________________
     def execute(self):
-        pass
+        return self
 
     def get_params(self):
-        pass
+        return self
 
     def get_sql(self):
-        pass
+        return self
 
 # ______________________________Where Conditions________________________________
     def and_where(self):
-        pass
+        return self
 
     def case(self):
-        pass
+        return self
 
     def or_where(self):
-        pass
+        return self
 
     def where(self):
-        pass
+        return self
 
 
 # possible use case
