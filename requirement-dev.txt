@@ -3,4 +3,5 @@ pydantic
 pydantic-settings
 psycopg2
 psycopg2-binary
-stamina
+sqlalchemy>=2.0.0
+alembic>=1.12.0

@@ -1,8 +1,6 @@
-# Query execution utilities
-# Represents SQL queries as objects instead of strings, 
-# this improves maintainability, type safety, and reduces SQL injection risks.
-# Look at SQLAlchemy Core or Python's pypika for examples.
 from typing import List, Optional
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, select
+from sqlalchemy.sql import text
 
 
 class QueryBuilder:
@@ -68,6 +66,7 @@ class QueryBuilder:
 # ______________________________Query Structure________________________________
     def from_table(self, table: str): # "Explicitely disallow comma notation and table functions for security.
         self.table = table
+        return self
     
     def group_by(self):
         return self
