@@ -3,6 +3,14 @@ from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, 
 from sqlalchemy.sql import text
 
 
+#CREATE DATABASE northwind
+    #WITH
+    #OWNER = postgres
+    #ENCODING = 'UTF8'
+    #LOCALE_PROVIDER = 'libc'
+    #CONNECTION LIMIT = -1
+    #IS_TEMPLATE = False;
+
 class QueryBuilder:
 
     def __init__(self):
