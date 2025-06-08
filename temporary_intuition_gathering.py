@@ -2,7 +2,7 @@ import psycopg2
 import polars as pl
 from src.database import PostgreSQLConnectionPool, PooledDatabaseConnection
 
-with PostgreSQLConnectionPool as pool:
+with PostgreSQLConnectionPool() as pool:
     with PooledDatabaseConnection(pool) as conn:
         tables = pl.read_database(
             query="""
