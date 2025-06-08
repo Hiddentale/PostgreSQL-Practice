@@ -1,6 +1,6 @@
 # Development environment settings
-from . import DataBaseSettings
+from settings import DataBaseSettings
 
 
 def get_settings() -> "DataBaseSettings":
-    return DataBaseSettings(HOST="localhost", NAME="dev_db", USERNAME="dev_user", PASSWORD="dev_password")
+    return DataBaseSettings(HOST="localhost", NAME="northwind", USERNAME="postgres", PASSWORD="mF4Z2gm&f")
