@@ -68,7 +68,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection_pool is not None:
             self.connection_pool.closeall()
-    
+
 
 class PooledDatabaseConnection:
     """

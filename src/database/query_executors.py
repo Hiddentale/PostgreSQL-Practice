@@ -8,15 +8,19 @@ class QueryBuilder:
     def __init__(self):
         self.table: None
         self.columns: Optional[List] = None
+        self.where_string: None
 
     def __str__(self):
         if not self.table:
             raise ValueError("Table must be specified")
         
-        sql_string = f"SELECT {self.columns} FROM {self.table}"
+        sql_string = f"""SELECT {self.table}"""
         if self.columns:
-            pass
-        pass
+            sql_string.append(f"\nFROM {self.columns}")
+        if self.where_string:
+            sql_string.append(f"\nWHERE {self.where_string}")
+
+        return sql_string
         # Proper SQL Query format here
 
     # # ______________________________Core Query Operations________________________________
@@ -38,7 +42,7 @@ class QueryBuilder:
     def insert(self):
         return self
 
-    def select(self, *columns):
+    def select(self, columns):
         self.columns = columns
         return self
 
@@ -123,7 +127,8 @@ class QueryBuilder:
     def or_where(self):
         return self
 
-    def where(self):
+    def where(self, *where):
+        self.where_string = where
         return self
 
 
