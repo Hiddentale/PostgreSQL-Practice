@@ -60,7 +60,7 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
             self.connection_pool = psycopg2.pool.SimpleConnectionPool(database_config.min_connections, 
                                                              database_config.max_connections, **connection_parameters)
             logger.info("Connection pool was succesfully created.")
-            return self
+            return self.connection_pool
         except psycopg2.Error as postgres_error:
             custom_error = DatabaseError.from_postgres_exception(postgres_error)
             raise custom_error from postgres_error
@@ -69,6 +69,43 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         if self.connection_pool is not None:
             self.connection_pool.closeall()
     
+
+class PooledDatabaseConnection:
+    """
+    Manages a single connection obtained from a connection pool.
+    
+    Example:
+        with PostgreSQLConnectionPool() as pool:
+            with PooledDatabaseConnection(pool) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM users")
+    """
+    def __init__(self, connection_pool):
+        self.connection = None
+        self.connection_pool = connection_pool
+
+    def __enter__(self):
+        try:
+            self.connection = self.get_valid_connection()
+            return self.connection
+        except ConnectionError:
+            logger.warning("Failed to acquire connection from connection pool.")
+            raise
+        except OutOfResourcesError:
+            logger.warning("Database is out of resources. Please try again later.")
+            # Maybe add implementation here for retry after a while?
+            raise
+        except AdminInterventionError:
+            logger.warning("Admin has intervened.")
+            raise
+        except ConfigurationError:
+            logger.warning("Connection pool is missing")
+            raise
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.connection is not None:
+            self.connection_pool.putconn(self.connection)
+
     @retry(on=psycopg2.OperationalError, attempts=5, timeout=30.0, wait_initial=0.1, wait_max=5.0)
     def get_valid_connection(self):
         """
@@ -110,40 +147,4 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
         except psycopg2.Error as postgres_error:
             custom_error = DatabaseError.from_postgres_exception(postgres_error)
             raise custom_error from postgres_error
-
-
-class PooledDatabaseConnection:
-    """
-    Manages a single connection obtained from a connection pool.
-    
-    Example:
-        with PostgreSQLConnectionPool() as pool:
-            with PooledDatabaseConnection(pool) as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT * FROM users")
-    """
-    def __init__(self, connection_pool_object):
-        self.connection = None
-        self.connection_pool_object = connection_pool_object
-
-    def __enter__(self):
-        try:
-            self.connection = self.connection_pool_object.get_valid_connection()
-            return self.connection
-        except ConnectionError:
-            logger.warning("Failed to acquire connection from connection pool.")
-            raise
-        except OutOfResourcesError:
-            logger.warning("Database is out of resources. Please try again later.")
-            # Maybe add implementation here for retry after a while?
-            raise
-        except AdminInterventionError:
-            logger.warning("Admin has intervened.")
-            raise
-        except ConfigurationError:
-            logger.warning("Connection pool is missing")
-            raise
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.connection is not None:
-            self.connection_pool_object.connection_pool.putconn(self.connection)
+        
