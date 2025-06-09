@@ -14,13 +14,26 @@ class QueryBuilder:
         if not self.table:
             raise ValueError("Table must be specified")
         
-        sql_string = f"""SELECT {self.table}"""
+        sql_string = []
         if self.columns:
-            sql_string.append(f"\nFROM {self.columns}")
-        if self.where_string:
-            sql_string.append(f"\nWHERE {self.where_string}")
+            if len(self.columns) == 1:
+                columns_str = self.columns[0]
+            else:
+                columns_str = ",".join(self.columns)
+        else:
+            columns_str = "*"
+        sql_string.append(f"SELECT {columns_str}")
 
-        return sql_string
+        sql_string.append(f"FROM {self.table}")
+
+        if self.where_string:
+            where_str_str = ",".join(self.where_string)
+            sql_string.append(f"WHERE {where_str_str}")
+        
+        print(sql_string)
+
+        return "\n".join(sql_string)
+    
         # Proper SQL Query format here
 
     # # ______________________________Core Query Operations________________________________
@@ -42,7 +55,7 @@ class QueryBuilder:
     def insert(self):
         return self
 
-    def select(self, columns):
+    def select(self, *columns):
         self.columns = columns
         return self
 
@@ -130,7 +143,3 @@ class QueryBuilder:
     def where(self, *where):
         self.where_string = where
         return self
-
-
-# possible use case
-query = QueryBuilder().select("name", "email").from_table("users").where("active = %s", [True])
