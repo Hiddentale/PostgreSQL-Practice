@@ -60,14 +60,14 @@ class PostgreSQLConnectionPool(metaclass=Singleton):
             self.connection_pool = psycopg2.pool.SimpleConnectionPool(database_config.min_connections, 
                                                              database_config.max_connections, **connection_parameters)
             logger.info("Connection pool was succesfully created.")
-            return self.connection_pool
+            return self
         except psycopg2.Error as postgres_error:
             custom_error = DatabaseError.from_postgres_exception(postgres_error)
             raise custom_error from postgres_error
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection_pool is not None:
-            self.connection_pool.close()
+            self.connection_pool.closeall()
     
     @retry(on=psycopg2.OperationalError, attempts=5, timeout=30.0, wait_initial=0.1, wait_max=5.0)
     def get_valid_connection(self):
@@ -122,13 +122,13 @@ class PooledDatabaseConnection:
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM users")
     """
-    def __init__(self, connection_pool):
+    def __init__(self, connection_pool_object):
         self.connection = None
-        self.connection_pool = connection_pool
+        self.connection_pool_object = connection_pool_object
 
     def __enter__(self):
         try:
-            self.connection = self.connection_pool.get_valid_connection()
+            self.connection = self.connection_pool_object.get_valid_connection()
             return self.connection
         except ConnectionError:
             logger.warning("Failed to acquire connection from connection pool.")
@@ -146,4 +146,4 @@ class PooledDatabaseConnection:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection is not None:
-            self.connection_pool.putconn(self.connection)
+            self.connection_pool_object.connection_pool.putconn(self.connection)
