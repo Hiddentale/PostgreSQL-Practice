@@ -6,9 +6,9 @@ from sqlalchemy.sql import text
 class QueryBuilder:
 
     def __init__(self):
-        self.table: None
+        self.table = None
         self.columns: Optional[List] = None
-        self.where_string: None
+        self.where_string = None
 
     def __str__(self):
         if not self.table:
