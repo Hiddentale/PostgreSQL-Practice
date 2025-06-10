@@ -1,1 +1,1 @@
-# pytest shared test configuriations and fixtures
+# pytest shared test configurations and fixtures

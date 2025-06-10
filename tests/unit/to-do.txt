@@ -1,1 +1,1 @@
-Tests for individual componets
+Tests for individual components
