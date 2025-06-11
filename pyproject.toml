@@ -1,7 +1,7 @@
 [tool.pytest.ini_options]
 markers = [
-    "unit: marks tests as unit tests (fast, isolated)",
-    "integration: marks tests as integration tests (slower, with dependencies)",
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
     "slow: marks tests as slow running",
-    "smoke: marks tests as smoke tests (basic functionality)",
+    "smoke: marks tests as smoke tests",
 ]
