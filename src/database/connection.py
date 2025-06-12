@@ -32,9 +32,7 @@ class Singleton(type):
 class PostgreSQLConnectionPool(metaclass=Singleton):
     """
     Manages a pool of PostgreSQL database connections as a singleton.
-    
-    This class provides efficient reuse of database connections through connection pooling.
-    It implements the context manager protocol for clean resource management.
+    This class provides reuse of database connections through connection pooling.
     
     Example:
         with PostgreSQLConnectionPool() as pool:

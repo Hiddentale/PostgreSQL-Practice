@@ -1,6 +1,4 @@
 from typing import List, Optional
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, select
-from sqlalchemy.sql import text
 
 
 class QueryBuilder:
@@ -28,7 +26,7 @@ class QueryBuilder:
         sql_string.append(f"FROM {self.table}")
 
         if self.where_string:
-            where_str_str = ",".join(self.where_string)
+            where_str_str = ",".join(self.where_string) # Bug here, make sure to fix!
             sql_string.append(f"WHERE {where_str_str}")
 
         for join in self.joins:
