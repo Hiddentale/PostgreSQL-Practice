@@ -9,11 +9,7 @@ class QueryBuilder:
         self.table = None
         self.columns: Optional[List] = None
         self.where_string = None
-        self.in_join = None
-        self.l_join = None
-        self.r_join = None
-        self.fo_join = None
-        self.crss_join = None
+        self.joins = []
 
     def __str__(self):
         if not self.table:
@@ -35,25 +31,8 @@ class QueryBuilder:
             where_str_str = ",".join(self.where_string)
             sql_string.append(f"WHERE {where_str_str}")
 
-        if self.in_join:
-            in_join_str = f"INNER JOIN {self.in_join[0]} ON {self.in_join[1]}"
-            sql_string.append(in_join_str)
-
-        if self.l_join:
-            l_join_str = f"LEFT JOIN {self.l_join[0]} ON {self.l_join[1]}"
-            sql_string.append(l_join_str)
-        
-        if self.r_join:
-            r_join_str = f"RIGHT JOIN {self.r_join[0]} ON {self.r_join[1]}"
-            sql_string.append(r_join_str)
-
-        if self.fo_join:
-            fo_join_str = f"FULL OUTER JOIN {self.fo_join[0]} ON {self.fo_join[1]}"
-            sql_string.append(fo_join_str)
-
-        if self.crss_join:
-            crss_join_str = f"CROSS JOIN {self.crss_join}"
-            sql_string.append(crss_join_str)
+        for join in self.joins:
+            sql_string.append(join)
 
         return "\n".join(sql_string)
 
@@ -84,27 +63,28 @@ class QueryBuilder:
         return self
 
     # ______________________________Joins________________________________
-    def cross_join(self, crss_join: str):
-        self.crss_join = crss_join
+    def cross_join(self, table_name: str):
+        self.joins.append(f"CROSS JOIN {table_name}")
         return self
 
-    def full_outer_join(self, fo_join_1: str, fo_join_2: str):
-        self.fo_join = (fo_join_1, fo_join_2)
+    def full_outer_join(self, table_name: str, join_condition: str):
+        self.joins.append(f"FULL OUTER JOIN {table_name} ON {join_condition}")
         return self
 
-    def inner_join(self, in_join_1: str, in_join_2: str):
-        self.in_join = (in_join_1, in_join_2)
+    def inner_join(self, table_name: str, join_condition: str):
+        self.joins.append(f"INNER JOIN {table_name} ON {join_condition}")
         return self
 
-    def join(self):
+    def join(self, table_name: str, join_condition: str):
+        self.joins.append(f"JOIN {table_name} ON {join_condition}")
         return self
 
-    def left_join(self, l_join_1: str, l_join_2: str):
-        self.l_join = (l_join_1, l_join_2)
+    def left_join(self, table_name: str, join_condition: str):
+        self.joins.append(f"LEFT JOIN {table_name} ON {join_condition}")
         return self
 
-    def right_join(self, r_join_1: str, r_join_2: str):
-        self.r_join = (r_join_1, r_join_2)
+    def right_join(self, table_name: str, join_condition: str):
+        self.joins.append(f"RIGHT JOIN {table_name} ON {join_condition}")
         return self
 # ______________________________Query Structure________________________________
     def from_table(self, table: str): # "Explicitely disallow comma notation and table functions for security.
