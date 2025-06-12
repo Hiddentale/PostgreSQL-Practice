@@ -16,7 +16,7 @@ A Python library demonstrating professional database practices with PostgreSQL, 
 ### Installation
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Hiddentale/PostgreSQL-Practice
 cd postgresql-practice
 pip install -r requirement-dev.txt
 ```
