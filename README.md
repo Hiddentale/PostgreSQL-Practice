@@ -1,4 +1,4 @@
-# PostgreSQL Practice
+# PostgreSQL Practice (WIP)
 
 A Python library demonstrating professional database practices with PostgreSQL, featuring connection pooling, query building, and robust error handling.
 
