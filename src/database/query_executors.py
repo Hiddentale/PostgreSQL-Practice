@@ -8,6 +8,7 @@ class QueryBuilder:
         self.columns: Optional[List] = None
         self.where_string = None
         self.joins = []
+        self.grp_by = []
 
     def __str__(self):
         if not self.table:
@@ -31,6 +32,15 @@ class QueryBuilder:
 
         for join in self.joins:
             sql_string.append(join)
+
+        if self.grp_by:
+            print(self.grp_by)
+            grp_by_string = []
+            if len(self.grp_by) == 1:
+                grp_by_string = self.grp_by[0]
+            else:
+                grp_by_string = ", ".join(self.grp_by)
+            sql_string.append(f"GROUP BY {grp_by_string}")
 
         return "\n".join(sql_string)
 
@@ -89,7 +99,8 @@ class QueryBuilder:
         self.table = table
         return self
     
-    def group_by(self):
+    def group_by(self, *grp_by):
+        self.grp_by = grp_by
         return self
 
     def having(self):
