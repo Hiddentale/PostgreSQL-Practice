@@ -9,6 +9,8 @@ class QueryBuilder:
         self.where_string = None
         self.joins = []
         self.grp_by = []
+        self.hving = []
+        self._count = None
 
     def __str__(self):
         if not self.table:
@@ -21,7 +23,11 @@ class QueryBuilder:
             else:
                 columns_str = ",".join(self.columns)
         else:
-            columns_str = "*"
+            columns_str = ""
+            if self._count:
+                columns_str.join(f"COUNT({self._count})")
+            else:
+                columns_str = "*"
         sql_string.append(f"SELECT {columns_str}")
 
         sql_string.append(f"FROM {self.table}")
@@ -34,7 +40,6 @@ class QueryBuilder:
             sql_string.append(join)
 
         if self.grp_by:
-            print(self.grp_by)
             grp_by_string = []
             if len(self.grp_by) == 1:
                 grp_by_string = self.grp_by[0]
@@ -42,10 +47,22 @@ class QueryBuilder:
                 grp_by_string = ", ".join(self.grp_by)
             sql_string.append(f"GROUP BY {grp_by_string}")
 
+            if self.hving:
+                hving_string = []
+                if len(self.hving) == 1:
+                    hving_string = self.hving[0]
+                else:
+                    hving_string = " AND ".join(self.hving)
+                sql_string.append(f"HAVING {hving_string}")
+
         return "\n".join(sql_string)
 
     # # ______________________________Core Query Operations________________________________
-    def count(self):
+    def count(self, column=None):
+        if column is None:
+            self._count = "*"
+        else:
+            self._count = column
         return self
 
     def delete(self):
@@ -103,7 +120,8 @@ class QueryBuilder:
         self.grp_by = grp_by
         return self
 
-    def having(self):
+    def having(self, *hving):
+        self.hving = hving
         return self   
 
     def limit(self):
