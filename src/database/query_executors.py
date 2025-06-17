@@ -4,56 +4,55 @@ from typing import List, Optional
 class QueryBuilder:
 
     def __init__(self):
-        self.table = None
-        self.columns: Optional[List] = None
-        self.where_string = None
-        self.joins = []
-        self.grp_by = []
-        self.hving = []
+        self._table = None
+        self._columns: Optional[List] = None
+        self._where = None
+        self._joins = []
+        self._group_by = []
+        self._having = []
         self._count = None
+        self._distinct = False
+        self._order_by = []
 
     def __str__(self):
-        if not self.table:
+        if not self._table:
             raise ValueError("Table must be specified")
         
         sql_string = []
-        if self.columns:
-            if len(self.columns) == 1:
-                columns_str = self.columns[0]
+        if self._columns:
+            if self._distinct:
+                columns_str = ",".join(self._columns)
+                sql_string.append(f"SELECT DISTINCT {columns_str}")
             else:
-                columns_str = ",".join(self.columns)
+                columns_str = ",".join(self._columns)
+                sql_string.append(f"SELECT {columns_str}")
+        elif self._count:
+            columns_str = f"COUNT({self._count})"
+            sql_string.append(f"SELECT {columns_str}")
         else:
-            columns_str = ""
-            if self._count:
-                columns_str.join(f"COUNT({self._count})")
-            else:
-                columns_str = "*"
-        sql_string.append(f"SELECT {columns_str}")
+            columns_str = "*"
+            sql_string.append(f"SELECT {columns_str}")
 
-        sql_string.append(f"FROM {self.table}")
+        sql_string.append(f"FROM {self._table}")
 
-        if self.where_string:
-            where_str_str = ",".join(self.where_string) # Bug here, make sure to fix!
-            sql_string.append(f"WHERE {where_str_str}")
+        if self._where:
+            where_string = ",".join(self._where) # Bug here, make sure to fix!
+            sql_string.append(f"WHERE {where_string}")
 
-        for join in self.joins:
+        for join in self._joins:
             sql_string.append(join)
 
-        if self.grp_by:
-            grp_by_string = []
-            if len(self.grp_by) == 1:
-                grp_by_string = self.grp_by[0]
-            else:
-                grp_by_string = ", ".join(self.grp_by)
-            sql_string.append(f"GROUP BY {grp_by_string}")
+        if self._group_by:
+            group_by_string = ", ".join(self._group_by)
+            sql_string.append(f"GROUP BY {group_by_string}")
 
-            if self.hving:
-                hving_string = []
-                if len(self.hving) == 1:
-                    hving_string = self.hving[0]
-                else:
-                    hving_string = " AND ".join(self.hving)
-                sql_string.append(f"HAVING {hving_string}")
+            if self._having:
+                having_string = " AND ".join(self._having)
+                sql_string.append(f"HAVING {having_string}")
+        
+        if self._order_by:
+            order_by_string = ", ".join(self._order_by)
+            sql_string.append(f"ORDER BY {order_by_string}")
 
         return "\n".join(sql_string)
 
@@ -69,6 +68,7 @@ class QueryBuilder:
         return self
 
     def distinct(self):
+        self._distinct = True
         return self
 
     def exists(self):
@@ -81,7 +81,7 @@ class QueryBuilder:
         return self
 
     def select(self, *columns):
-        self.columns = columns
+        self._columns = columns
         return self
 
     def update(self):
@@ -113,24 +113,26 @@ class QueryBuilder:
         return self
 # ______________________________Query Structure________________________________
     def from_table(self, table: str): # "Explicitely disallow comma notation and table functions for security.
-        self.table = table
+        self._table = table
         return self
     
-    def group_by(self, *grp_by):
-        self.grp_by = grp_by
+    def group_by(self, *group_by):
+        self._group_by = group_by
         return self
 
-    def having(self, *hving):
-        self.hving = hving
+    def having(self, *having):
+        self._having = having
         return self   
 
-    def limit(self):
+    def limit(self, limit):
+        self._limit = limit
         return self
 
     def offset(self):
         return self
 
-    def order_by(self):
+    def order_by(self, *order_by):
+        self._order_by = order_by
         return self
 
 # ______________________________Set operation________________________________
@@ -174,5 +176,5 @@ class QueryBuilder:
         return self
 
     def where(self, *where):
-        self.where_string = where
+        self._where = where
         return self
