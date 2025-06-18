@@ -8,9 +8,9 @@ class TestQueryBuilderBasics:
     def test_query_builder_instantiation(self):
         builder = QueryBuilder()
         
-        assert builder.table is None
-        assert builder.columns is None  
-        assert builder.where_string is None
+        assert builder._table is None
+        assert builder._columns is None  
+        assert builder._where is None
 
     @pytest.mark.unit
     def test_fluent_interface_returns_self(self):
@@ -27,9 +27,9 @@ class TestQueryBuilderBasics:
         result = builder.select("name", "email").from_table("users").where("active = true")
         
         assert result is builder
-        assert builder.table == "users"
-        assert builder.columns == ("name", "email")
-        assert builder.where_string == ("active = true",)
+        assert builder._table == "users"
+        assert builder._columns == ("name", "email")
+        assert builder._where == ("active = true",)
 
 
 class TestQueryBuilderSelect:
@@ -39,14 +39,14 @@ class TestQueryBuilderSelect:
         builder = QueryBuilder()
         builder.select("name")
         
-        assert builder.columns == ("name",)
+        assert builder._columns == ("name",)
 
     @pytest.mark.unit
     def test_select_multiple_columns(self):
         builder = QueryBuilder()
         builder.select("name", "email", "created_at")
         
-        assert builder.columns == ("name", "email", "created_at")
+        assert builder._columns == ("name", "email", "created_at")
 
     @pytest.mark.unit
     def test_select_no_columns_defaults_to_star(self):
@@ -64,7 +64,7 @@ class TestQueryBuilderSelect:
         builder.select("name")
         builder.select("email", "age")
         
-        assert builder.columns == ("email", "age")
+        assert builder._columns == ("email", "age")
 
 
 class TestQueryBuilderFromTable:
@@ -75,7 +75,7 @@ class TestQueryBuilderFromTable:
         builder = QueryBuilder()
         builder.from_table("users")
         
-        assert builder.table == "users"
+        assert builder._table == "users"
 
     @pytest.mark.unit
     def test_from_table_overrides_previous_table(self):
@@ -84,7 +84,7 @@ class TestQueryBuilderFromTable:
         builder.from_table("users")
         builder.from_table("orders")
         
-        assert builder.table == "orders"
+        assert builder._table == "orders"
 
 
 class TestQueryBuilderWhere:
@@ -95,7 +95,7 @@ class TestQueryBuilderWhere:
         builder = QueryBuilder()
         builder.where("id = 1")
         
-        assert builder.where_string == ("id = 1",)
+        assert builder._where == ("id = 1",)
 
     @pytest.mark.unit
     def test_where_multiple_conditions(self):
@@ -103,7 +103,7 @@ class TestQueryBuilderWhere:
         builder = QueryBuilder()
         builder.where("id = 1", "active = true")
         
-        assert builder.where_string == ("id = 1", "active = true")
+        assert builder._where == ("id = 1", "active = true")
 
     @pytest.mark.unit
     def test_where_overrides_previous_conditions(self):
@@ -112,7 +112,7 @@ class TestQueryBuilderWhere:
         builder.where("id = 1")
         builder.where("name = 'John'", "active = true")
         
-        assert builder.where_string == ("name = 'John'", "active = true")
+        assert builder._where == ("name = 'John'", "active = true")
 
 
 class TestQueryBuilderStringGeneration:

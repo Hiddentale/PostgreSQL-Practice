@@ -5,14 +5,21 @@ class QueryBuilder:
 
     def __init__(self):
         self._table = None
-        self._columns: Optional[List] = None
         self._where = None
+        self._count = None
+        self._limit = None
+        self._offset = None
+
+        self._and_where = []
+        self._or_where = []
         self._joins = []
         self._group_by = []
         self._having = []
-        self._count = None
-        self._distinct = False
         self._order_by = []
+
+        self._columns: Optional[List] = None
+
+        self._distinct = False
 
     def __str__(self):
         if not self._table:
@@ -36,7 +43,13 @@ class QueryBuilder:
         sql_string.append(f"FROM {self._table}")
 
         if self._where:
-            where_string = ",".join(self._where) # Bug here, make sure to fix!
+            where_string = " AND ".join(self._where)
+            if self._and_where:
+                and_where_string = " AND ".join(self._and_where)
+                where_string += " AND " + and_where_string
+            if self._or_where:
+                or_where_string = " OR ".join(self._or_where)
+                where_string += " OR " + or_where_string
             sql_string.append(f"WHERE {where_string}")
 
         for join in self._joins:
@@ -53,6 +66,11 @@ class QueryBuilder:
         if self._order_by:
             order_by_string = ", ".join(self._order_by)
             sql_string.append(f"ORDER BY {order_by_string}")
+
+        if self._limit:
+            sql_string.append(f"LIMIT {self._limit}")
+            if self._offset:
+                sql_string.append(f"OFFSET {self._offset}")
 
         return "\n".join(sql_string)
 
@@ -77,7 +95,8 @@ class QueryBuilder:
     def first(self):
         return self
 
-    def insert(self):
+    def insert(self, table, *items):
+        self._table = table
         return self
 
     def select(self, *columns):
@@ -89,27 +108,27 @@ class QueryBuilder:
 
     # ______________________________Joins________________________________
     def cross_join(self, table_name: str):
-        self.joins.append(f"CROSS JOIN {table_name}")
+        self._joins.append(f"CROSS JOIN {table_name}")
         return self
 
     def full_outer_join(self, table_name: str, join_condition: str):
-        self.joins.append(f"FULL OUTER JOIN {table_name} ON {join_condition}")
+        self._joins.append(f"FULL OUTER JOIN {table_name} ON {join_condition}")
         return self
 
     def inner_join(self, table_name: str, join_condition: str):
-        self.joins.append(f"INNER JOIN {table_name} ON {join_condition}")
+        self._joins.append(f"INNER JOIN {table_name} ON {join_condition}")
         return self
 
     def join(self, table_name: str, join_condition: str):
-        self.joins.append(f"JOIN {table_name} ON {join_condition}")
+        self._joins.append(f"JOIN {table_name} ON {join_condition}")
         return self
 
     def left_join(self, table_name: str, join_condition: str):
-        self.joins.append(f"LEFT JOIN {table_name} ON {join_condition}")
+        self._joins.append(f"LEFT JOIN {table_name} ON {join_condition}")
         return self
 
     def right_join(self, table_name: str, join_condition: str):
-        self.joins.append(f"RIGHT JOIN {table_name} ON {join_condition}")
+        self._joins.append(f"RIGHT JOIN {table_name} ON {join_condition}")
         return self
 # ______________________________Query Structure________________________________
     def from_table(self, table: str): # "Explicitely disallow comma notation and table functions for security.
@@ -128,7 +147,8 @@ class QueryBuilder:
         self._limit = limit
         return self
 
-    def offset(self):
+    def offset(self, offset):
+        self._offset = offset
         return self
 
     def order_by(self, *order_by):
@@ -166,13 +186,17 @@ class QueryBuilder:
         return self
 
 # ______________________________Where Conditions________________________________
-    def and_where(self):
+    def and_where(self, *and_where):
+        for item in and_where:
+            self._and_where.append(item)
         return self
 
+    def or_where(self, *or_where):
+        for item in or_where:
+            self._or_where.append(item)
+        return self
+    
     def case(self):
-        return self
-
-    def or_where(self):
         return self
 
     def where(self, *where):
