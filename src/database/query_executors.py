@@ -16,6 +16,7 @@ class QueryBuilder:
         self._group_by = []
         self._having = []
         self._order_by = []
+        self._insert = []
 
         self._columns: Optional[List] = None
 
@@ -25,7 +26,17 @@ class QueryBuilder:
         if not self._table:
             raise ValueError("Table must be specified")
         
+
+        
         sql_string = []
+        if self._insert:
+            template = self._insert[0]
+            intermediary_string = ", ".join(template)
+            appending_string = "(" + intermediary_string + ")"
+            sql_string.append(f"INSERT INTO {self._table} {appending_string}")
+            sql_string.append(f"VALUES")
+            
+
         if self._columns:
             if self._distinct:
                 columns_str = ",".join(self._columns)
@@ -43,14 +54,7 @@ class QueryBuilder:
         sql_string.append(f"FROM {self._table}")
 
         if self._where:
-            where_string = " AND ".join(self._where)
-            if self._and_where:
-                and_where_string = " AND ".join(self._and_where)
-                where_string += " AND " + and_where_string
-            if self._or_where:
-                or_where_string = " OR ".join(self._or_where)
-                where_string += " OR " + or_where_string
-            sql_string.append(f"WHERE {where_string}")
+            sql_string.append(self.where_statement())
 
         for join in self._joins:
             sql_string.append(join)
@@ -73,6 +77,16 @@ class QueryBuilder:
                 sql_string.append(f"OFFSET {self._offset}")
 
         return "\n".join(sql_string)
+    
+    def where_statement(self):
+        where_string = " AND ".join(self._where)
+        if self._and_where:
+            and_where_string = " AND ".join(self._and_where)
+            where_string += " AND " + and_where_string
+        if self._or_where:
+            or_where_string = " OR ".join(self._or_where)
+            where_string += " OR " + or_where_string
+        return f"WHERE {where_string}"
 
     # # ______________________________Core Query Operations________________________________
     def count(self, column=None):
@@ -97,6 +111,7 @@ class QueryBuilder:
 
     def insert(self, table, *items):
         self._table = table
+        self._insert = items
         return self
 
     def select(self, *columns):
